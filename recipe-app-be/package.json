@@ -8,13 +8,19 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
     "express": "~4.16.1",
     "express-ipfilter": "^1.1.2",
     "http-errors": "~1.6.3",
+    "https": "^1.0.0",
     "jade": "~1.11.0",
-    "morgan": "~1.9.1"
+    "morgan": "~1.9.1",
+    "mysql2": "^2.1.0",
+    "path": "^0.12.7",
+    "sequelize": "^5.21.12"
   },
   "repository": {
     "type": "git",

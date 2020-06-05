@@ -1,5 +1,6 @@
 var createError = require('http-errors');
 var express = require('express');
+const bodyParser = require('body-parser');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
@@ -8,9 +9,9 @@ var logger = require('morgan');
 // const ipfilter = require('express-ipfilter').IpFilter;
 // const ips = ['::1'];
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var testAPIRouter = require('./routes/testAPI');
+// Environment Setup
+const env = require('dotenv'); //.load(); 
+var https = require('https');
 
 var app = express();
 
@@ -30,9 +31,12 @@ app.use(function(req, res, next) {
     'Access-Control-Allow-Headers',
     'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept'
   );
-
   next();
 });
+
+// Set-up BodyParser, Allows POSTs
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -40,9 +44,19 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Route Variables
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var testAPIRouter = require('./routes/testAPI');
+/////////
+var recipiesRouter = require('./routes/recipies');
+
+// Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/testAPI', testAPIRouter);
+/////////
+app.use('/recipies', recipiesRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -50,14 +64,14 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// app.use(function(err, req, res, next) {
+//   // set locals, only providing error in development
+//   res.locals.message = err.message;
+//   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+//   // render the error page
+//   res.status(err.status || 500);
+//   res.render('error');
+// });
 
 module.exports = app;
