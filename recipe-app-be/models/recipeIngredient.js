@@ -5,7 +5,7 @@ const db = require('../config/database');
 const RecipeIngredient = db.define('recipeingredient', {
     RecipeIngredientID: {
         type: Sequelize.INTEGER,
-        forign: true
+        primaryKey: true
     },
     RecipeID: {
         type: Sequelize.INTEGER

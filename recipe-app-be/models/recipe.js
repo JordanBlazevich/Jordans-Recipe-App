@@ -10,10 +10,22 @@ const Recipe = db.define('recipe', {
     Name: {
         type: Sequelize.STRING
     },
-    Description: {
+    Image: {
         type: Sequelize.STRING
     },
-    Instructions: {
+    Source: {
+        type: Sequelize.STRING
+    },
+    Url: {
+        type: Sequelize.STRING
+    },
+    Yield: {
+        type: Sequelize.INTEGER
+    },
+    Calories: {
+        type: Sequelize.FLOAT
+    },
+    Description: {
         type: Sequelize.STRING
     }
 }, { freezeTableName: true, timestamps: false })

@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS RecipeIngredient;
+DROP TABLE IF EXISTS RecipeInstruction;
 DROP TABLE IF EXISTS Recipe;
 DROP TABLE IF EXISTS Ingredient;
 DROP TABLE IF EXISTS Measure;
@@ -6,8 +7,12 @@ DROP TABLE IF EXISTS Measure;
 create table Recipe (
 	RecipeID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
 	Name VARCHAR(25), 
-	Description VARCHAR(50), 
-	Instructions VARCHAR(500)) 
+    Image VARCHAR(2083),
+    Source VARCHAR(50),
+    Url VARCHAR(2083),
+    Yield INT,
+    Calories FLOAT,
+	Description VARCHAR(50))
 	ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 create table Ingredient (
@@ -30,6 +35,14 @@ create table RecipeIngredient (
 	CONSTRAINT fk_ingredient FOREIGN KEY(IngredientID) REFERENCES Ingredient(IngredientID), 
 	CONSTRAINT fk_measure FOREIGN KEY(MeasureID) REFERENCES Measure(MeasureID)) 
 	ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
+
+create table RecipeInstruction (
+	RecipeInstructionID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
+	RecipeID INT NOT NULL, 
+    Step INT,
+	Instruction VARCHAR(100) NOT NULL, 
+	CONSTRAINT fk_recipeInstruction FOREIGN KEY(RecipeID) REFERENCES Recipe(RecipeID))
+	ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
     
 -- TEST DATA
 
@@ -51,6 +64,22 @@ INSERT INTO RecipeIngredient (RecipeID, IngredientID, MeasureID, Amount)  VALUES
 
 INSERT INTO RecipeIngredient (RecipeID, IngredientID, MeasureID, Amount)  VALUES (2, 4, 1, 1);
 
+SELECT RecipeID,
+	   Name AS 'Recipe',
+	   Description,
+	   Instructions,
+	   (SELECT RecipeIngredientID,
+			   IngredientID,
+               MeasureID,
+               Amount
+		FROM recipeingredient
+        WHERE RecipeID = 1) AS LIST
+FROM recipe
+WHERE RecipeID = 1;
+					
+       
+       
+
 SELECT r.Name AS 'Recipe', 
 	r.Instructions, 
 	ri.Amount AS 'Amount', 
@@ -59,4 +88,6 @@ SELECT r.Name AS 'Recipe',
 FROM Recipe r 
 JOIN RecipeIngredient ri on r.RecipeID = ri.RecipeID
 JOIN Ingredient i on i.IngredientID = ri.IngredientID
-LEFT OUTER JOIN Measure mu on mu.MeasureID = ri.MeasureID;
+LEFT OUTER JOIN Measure mu on mu.MeasureID = ri.MeasureID
+WHERE r.RecipeID = 1
+
