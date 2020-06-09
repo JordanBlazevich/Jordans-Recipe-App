@@ -30,5 +30,6 @@ module.exports = {
     Recipe: Recipe,
     Ingredient: Ingredient,
     Measure: Measure,
-    RecipeIngredient: RecipeIngredient,  
+    RecipeIngredient: RecipeIngredient, 
+    RecipeInstruction: RecipeInstruction 
 }

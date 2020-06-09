@@ -3,11 +3,14 @@ const db = require('../config/database');
 
 
 const RecipeInstruction = db.define('recipeinstruction', {
-    RecipeIstructionID: {
+    RecipeInstructionID: {
         type: Sequelize.INTEGER,
         primaryKey: true
     },
     RecipeID: {
+        type: Sequelize.INTEGER
+    },
+    Step: {
         type: Sequelize.INTEGER
     },
     Instruction: {
