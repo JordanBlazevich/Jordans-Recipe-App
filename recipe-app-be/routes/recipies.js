@@ -7,8 +7,8 @@ const axios = require('axios');
 var _ = require('lodash');
 
 //************** Recipe API ID/Key **************** */
-const app_id = '88ec001b';
-const app_key = '17d4790e2012282b8e8e49eb649838dd';
+const APP_ID = '88ec001b';
+const APP_KEY = '17d4790e2012282b8e8e49eb649838dd';
 
 /**
  * This function returns a list of every RecipeID and its associated Name and Description in the database.
@@ -129,19 +129,24 @@ router.post(('/create'), (req, res) => {
         // Declare variables START
         var validationErrors = false;
 
-        var name;
+        var name = req.body.name;
         var image;
         var source;
         var url;
         var yield;
         var calories;
-        var description;
+        //var description;
 
         var ingredients = [];
         var instructions = [];
         // Declare variables END 
 
         // Validation START
+        // Check if name is the right length
+        if(name.length > 100) {
+            validationErrors = true;
+            errorMessage = 'Recipe name cannot be more than 100 characters long';
+        }
         // Check if image is in request
         if(!req.body.image) {
             image = null;
@@ -267,15 +272,15 @@ router.post(('/create'), (req, res) => {
                 Yield: yield,
                 Calories: calories
             }, {freezeTableName: true})
-            // TODO: Figure out why this creation method doesnt work past here, 'Unhandled rejection SequelizeDatabaseError: Column 'RecipeID' cannot be null'
             .then(newRecipe => {
-                var recId = newRecipe.dataValues.RecipeID;
+                var recId = newRecipe.null;
+                console.log(newRecipe);
                 ingredients.forEach(element => {
                     index.RecipeIngredient.create({
                         RecipeID: recId,
-                        IngredientID: element.IngredientID,
-                        MeasureID: element.MeasureID,
-                        Amount: element.Amount
+                        IngredientID: element.ingredientId,
+                        MeasureID: element.measureId,
+                        Amount: element.amount
                     })
                 })
                 instructions.forEach(element => {
@@ -285,7 +290,9 @@ router.post(('/create'), (req, res) => {
                         Instruction: element.instruction
                     })
                 })
-                res.status(201).send('A recipe record for ' + newRecipe.dataValues.Name + ' has been created.')
+                res.status(201).send({
+                    message: 'A recipe record for ' + newRecipe.dataValues.Name + ' has been created.'
+                })
             })
             .catch(e =>
                 res.status(422).send({
@@ -304,8 +311,8 @@ router.get(('/edamam/:queryText'), (req, res) =>
     axios({
         method: 'get',
         url: 'https://api.edamam.com/search?q=' + req.params.queryText.toString() + 
-                                                  '&app_id=' + app_id + 
-                                                  '&app_key=' + app_key
+                                                  '&app_id=' + APP_ID + 
+                                                  '&app_key=' + APP_KEY
     })
     .then(results =>{
         var recipes = {

@@ -49,6 +49,12 @@ INSERT INTO Measure (Name) VALUES('CUP'), ('TEASPOON'), ('TABLESPOON'), ('PINCH'
 
 INSERT INTO Ingredient (Name) VALUES('soy sauce'), ('salt'), ('sherry'), ('chocolate'), ('vanilla extract'), ('flour');
 
+SELECT * FROM recipe where RecipeID = 1;
+SELECT * FROM recipeingredient where RecipeID = 1;
+SELECT * FROM recipeinstruction where RecipeID = 1;
+
+-- DELETE from recipe where recipeId = 2
+
 -- TEST RECIPE --
 -- INSERT INTO Recipe (Name, Image, Source, Url, Yield, Calories) VALUES('Cook The Book: Chopped Ham Salad With Hard Boiled Eggs', 'https://www.edamam.com/web-img/b67/b678b3b88698d63e94cc690561c5bf33.jpg', 'Serious Eats', 'http://www.seriouseats.com/recipes/2010/08/chopped-ham-salad-with-hard-boiled-eggs-recipe.html', 3, 1716.5924330206203);
 
