@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const index = require('../models/index');
 const axios = require('axios');
 var _ = require('lodash');
+const sequelize = require('../config/database');
+var Promise = require('bluebird');
 
 //************** Recipe API ID/Key **************** */
 const APP_ID = '88ec001b';
@@ -32,8 +34,16 @@ router.get(('/:id'), (req, res) => {
     if(req.params.id) {
         index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']})
         .then(result =>{
+            if(result) {
             res.status(200).send(result);
             res.end();
+            }
+            else {
+            res.status(404).send({
+                message: 'That recipe record could not be found in the database.'
+            });
+            res.end();               
+            }
         })
         .catch(err =>
             res.status(500).send({
@@ -72,52 +82,53 @@ router.get(('/:id'), (req, res) => {
  * This function creates a new recipe in the database and returns the PK for the new recipe.
  * 
  * Test Obj:
- *              {"name": "testRecipe",
-                "image": "testImage",
-                "source": "testSource",
-                "url": "testUrl",
-                "yield": 1,
-                "calories": 500,
-                "description": "teste description goes here",
-                "ingredients": [
-                    {
-                        "ingredientId": 1,
-                        "measureId": 1,
-                        "amount": 1
-                    },
-                    {
-                        "ingredientId": 2,
-                        "measureId": 2,
-                        "amount": 1
-                    },
-                    {
-                        "ingredientId": 3,
-                        "measureId": 3,
-                        "amount": 1
-                    },
-                    {
-                        "ingredientId": 4,
-                        "measureId": 4,
-                        "amount": 1
-                    }
-                ],
-                "instructions": [
-                    {
-                        "step": 1,
-                        "instruction": "take this 1"
-                    },
-                    {
-                        "step": 2,
-                        "instruction": "take this 2"
-                    },
-                    {
-                        "step": 3,
-                        "instrucion": "take this 3"
-                    },
-                    {
-                        "step": 4,
-                        "instruction": "take this 4"
-                    }]}
+ * { "name": "testRecipe",
+ 	"image": "testImage",
+ 	"source": "testSource",
+ 	"url": "testUrl",
+ 	"yield": 1,
+ 	"calories": 500,
+	 "ingredients": [
+		{
+			"ingredientId": 1,
+			"measureId": 1,
+			"amount": 1
+		},
+		{
+			"ingredientId": 2,
+			"measureId": 2,
+			"amount": 1
+		},
+		{
+			"ingredientId": 3,
+			"measureId": 3,
+			"amount": 1
+		},
+		{
+			"ingredientId": 4,
+			"measureId": 4,
+			"amount": 1
+		}
+	],
+ 	 "instructions": [
+		{
+			"step": 1,
+			"instruction": "take this 1"
+		},
+		{
+			"step": 2,
+			"instruction": "take this 2"
+		},
+		{
+			"step": 3,
+			"instruction": "take this 3"
+		},
+		{
+			"step": 4,
+			"instruction": "take this 4"
+		}
+	]
+}
  */
 router.post(('/create'), (req, res) => {
     if(!req.body.name) {
@@ -142,6 +153,8 @@ router.post(('/create'), (req, res) => {
         // Declare variables END 
 
         // Validation START
+        // TODO: Compile validation error messages into an array and send them all back when validation errors happen.
+        // TODO: Also investigate if throwing all those error messages is standard practice.
         // Check if name is the right length
         if(name.length > 100) {
             validationErrors = true;
@@ -220,21 +233,6 @@ router.post(('/create'), (req, res) => {
             }
         }
 
-        // if(!validationErrors) {
-        //     // Check if description is in request
-        //     if(!req.body.description) {
-        //         description = null;
-        //     }
-        //     else {
-        //         description = req.body.description;
-        //     // Check if length correct
-        //         if(description.length > 50) {
-        //             validationErrors = true;
-        //             errorMessage = 'Description cannot be more than 50 characters long';
-        //         }
-        //     }
-        // }
-
         if(!validationErrors) {
             // Check if ingredients are in request
             if(!req.body.ingredients) {
@@ -256,49 +254,58 @@ router.post(('/create'), (req, res) => {
             else {
                 // TODO: figure out how to validate that the right properties are included
                 instructions = req.body.instructions;
-                console.log(instructions);
-                console.log(ingredients);
+                // console.log(instructions);
+                // console.log(ingredients);
             }
         }
         // Validation END
 
         // Creation START
         if(!validationErrors) {
-            index.Recipe.create({
-                Name: name,
-                Image: image,
-                Source: source,
-                Url: url,
-                Yield: yield,
-                Calories: calories
-            }, {freezeTableName: true})
-            .then(newRecipe => {
-                var recId = newRecipe.null;
-                console.log(newRecipe);
-                ingredients.forEach(element => {
-                    index.RecipeIngredient.create({
-                        RecipeID: recId,
-                        IngredientID: element.ingredientId,
-                        MeasureID: element.measureId,
-                        Amount: element.amount
+            sequelize.transaction().then(function (t) {
+                return index.Recipe.create({
+                            Name: name,
+                            Image: image,
+                            Source: source,
+                            Url: url,
+                            Yield: yield,
+                            Calories: calories
+                        }, //{freezeTableName: true},
+                            {transaction: t})
+                    .then(function(newRecipe) {
+                        var recId = newRecipe.null;
+                        return Promise.map(ingredients, function(ingredient) {
+                            return index.RecipeIngredient.create({
+                                        RecipeID: recId,
+                                        IngredientID: ingredient.ingredientId,
+                                        MeasureID: ingredient.measureId,
+                                        Amount: ingredient.amount
+                                    }, {transaction: t})
+                        })
+                        .then(function() {
+                            return Promise.map(instructions, function(instruction) {
+                                return index.RecipeInstruction.create({
+                                            RecipeID: recId,
+                                            Step: instruction.step,
+                                            Instruction: instruction.instruction
+                                        }, {transaction: t})
+                            })
+                        })
                     })
-                })
-                instructions.forEach(element => {
-                    index.RecipeInstruction.create({
-                        RecipeID: recId,
-                        Step: element.step,
-                        Instruction: element.instruction
+                    .then(function() {
+                        //console.log('FOR TESTING >> committed');
+                        t.commit();
+                        res.status(201).send({
+                            message: 'A recipe record for ' + name +' has been created.'
+                        })
                     })
-                })
-                res.status(201).send({
-                    message: 'A recipe record for ' + newRecipe.dataValues.Name + ' has been created.'
-                })
+                    .catch(function (err) {
+                            t.rollback();
+                            res.status(422).send({
+                                message: 'Transaction failed, this is a custom message'
+                            })
+                    })
             })
-            .catch(e =>
-                res.status(422).send({
-                    message: e.message
-                })
-            )
         }
         // Creation END 
     }

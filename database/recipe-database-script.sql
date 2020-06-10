@@ -38,7 +38,7 @@ create table RecipeIngredient (
 create table RecipeInstruction (
 	RecipeInstructionID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
 	RecipeID INT NOT NULL, 
-    Step INT,
+    Step INT NOT NULL,
 	Instruction VARCHAR(100) NOT NULL, 
 	CONSTRAINT fk_recipeInstruction FOREIGN KEY(RecipeID) REFERENCES Recipe(RecipeID))
 	ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
