@@ -7,6 +7,9 @@ const axios = require('axios');
 var _ = require('lodash');
 const sequelize = require('../config/database');
 var Promise = require('bluebird');
+const { get } = require('lodash');
+// const { JSONB } = require('sequelize/types');
+// const { Json } = require('sequelize/types/lib/utils');
 
 //************** Recipe API ID/Key **************** */
 const APP_ID = '88ec001b';
@@ -31,26 +34,116 @@ router.get(('/'), (req, res) =>
  * This function returns a single recipe based on its RecipeID.
  */
 router.get(('/:id'), (req, res) => {
+    // TODO: test if this will still work if no recipe instructions are included, as the way it is now it should fail if no recipe instructions/ingredients in the db
+    // TODO: fix the error handling to work properly, testing for result simply doesnt work, test other ways to do this.
     if(req.params.id) {
-        index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']})
-        .then(result =>{
-            if(result) {
-            res.status(200).send(result);
-            res.end();
-            }
-            else {
-            res.status(404).send({
-                message: 'That recipe record could not be found in the database.'
+        function getRecipeDetails(id) {
+            return new Promise(function(resolved, rejected) {
+                result = index.Recipe.findByPk(id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']});
+                if(result) {
+                    resolved(result); 
+                } else {
+                    rejected('That recipe does not exist.');
+                }
             });
-            res.end();               
+        }
+
+        function getRecipeIngredients(id) {
+            return new Promise(function(resolved, rejected) {
+                result = index.RecipeIngredient.findAll({ where: { RecipeID: id }}).map(el => el.get({ plain: true }));
+                if(result) {
+                   resolved(result); 
+                } else {
+                    rejected('No recipe ingredients exist for that recipe.');
+                }
+            });
+        }
+        function getRecipeInstructions(id) {
+            return new Promise(function(resolved, rejected) {
+                result = index.RecipeInstruction.findAll({ where: { RecipeID: id }}).map(el => el.get({ plain: true }));
+                if(result) {
+                   resolved(result); 
+                } else {
+                    rejected('No recipe instructions exist for that recipe.');
+                }
+            });
+        }
+
+        function successHandler(recipe) {
+            res.status(200).send(recipe);
+        }
+
+        function failHandler(message) {
+            res.status(400).send({
+                message: message
+            });
+           // console.log(message);
+        }
+
+        (async function() {
+            try {
+                let responses = [];
+                responses.push(await getRecipeDetails(req.params.id));
+                responses.push(await getRecipeIngredients(req.params.id));
+                responses.push(await getRecipeInstructions(req.params.id));
+
+                // let recipe = responses.map(function(response) {
+                //     return successHandler(response)
+                // });
+
+                let recipe = {
+                    recipe: responses[0],
+                    ingredients: responses[1],
+                    instructions: responses[2]
+                };
+
+                return successHandler(recipe);                
+            } catch(e) {
+                failHandler(e);
             }
-        })
-        .catch(err =>
-            res.status(500).send({
-                message: 'Recipe information could not be loaded',
-                error: err.toString()
-             })
-            );
+        })();
+
+
+
+        // index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']})
+        // .then(result =>{
+        //     if(!result) {
+        //         res.status(404).send({
+        //             message: 'That recipe record could not be found in the database.'
+        //         });
+        //         res.end();
+        //     }
+        //     else {
+        //         //console.log(result);
+        //         // var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: result.dataValues.RecipeID }}, {attributes: ['IngredientID', 'MeasureID', 'Amount'], raw: true})
+        //         // var instructions = index.RecipeInstruction.findAll({ where: { RecipeID: result.dataValues.RecipeID }}, {attributes: ['Step', 'Instruction'], raw: true});
+        //         // TODO: figure out why this returns a result if you .then after the find all, yet not without the .then. ISSUE 
+        //         var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: result.dataValues.RecipeID }}).map(el => el.get({ plain: true }));
+        //         var instructions = index.RecipeInstruction.findAll({ where: { RecipeID: result.dataValues.RecipeID }}).map(el => el.get({ plain: true }));
+        //         console.log(ingredients);
+        //         // console.log(instructions);
+        //         res.status(200).send({
+        //             recipe: {
+        //                 RecipeID: result.null,
+        //                 Name: result.dataValues.name,
+        //                 Image: result.dataValues.image,
+        //                 Source: result.dataValues.source,
+        //                 Url: result.dataValues.url,
+        //                 Yield: result.dataValues.yield,
+        //                 Calories: result.dataValues.calories,
+        //                 Ingredients: ingredients,
+        //                 Instructions: instructions
+        //             }
+        //         });
+        //         res.end();             
+        //     }
+        // })
+        // .catch(err =>
+        //     res.status(500).send({
+        //         message: 'Recipe information could not be loaded',
+        //         error: err.toString()
+        //      })
+        //     );
         // try {
         // var recipe = index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']});
         // // var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: req.params.id }});
