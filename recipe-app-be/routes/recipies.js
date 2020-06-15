@@ -102,72 +102,6 @@ router.get(('/:id'), (req, res) => {
                 failHandler(e);
             }
         })();
-
-
-
-        // index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']})
-        // .then(result =>{
-        //     if(!result) {
-        //         res.status(404).send({
-        //             message: 'That recipe record could not be found in the database.'
-        //         });
-        //         res.end();
-        //     }
-        //     else {
-        //         //console.log(result);
-        //         // var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: result.dataValues.RecipeID }}, {attributes: ['IngredientID', 'MeasureID', 'Amount'], raw: true})
-        //         // var instructions = index.RecipeInstruction.findAll({ where: { RecipeID: result.dataValues.RecipeID }}, {attributes: ['Step', 'Instruction'], raw: true});
-        //         // TODO: figure out why this returns a result if you .then after the find all, yet not without the .then. ISSUE 
-        //         var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: result.dataValues.RecipeID }}).map(el => el.get({ plain: true }));
-        //         var instructions = index.RecipeInstruction.findAll({ where: { RecipeID: result.dataValues.RecipeID }}).map(el => el.get({ plain: true }));
-        //         console.log(ingredients);
-        //         // console.log(instructions);
-        //         res.status(200).send({
-        //             recipe: {
-        //                 RecipeID: result.null,
-        //                 Name: result.dataValues.name,
-        //                 Image: result.dataValues.image,
-        //                 Source: result.dataValues.source,
-        //                 Url: result.dataValues.url,
-        //                 Yield: result.dataValues.yield,
-        //                 Calories: result.dataValues.calories,
-        //                 Ingredients: ingredients,
-        //                 Instructions: instructions
-        //             }
-        //         });
-        //         res.end();             
-        //     }
-        // })
-        // .catch(err =>
-        //     res.status(500).send({
-        //         message: 'Recipe information could not be loaded',
-        //         error: err.toString()
-        //      })
-        //     );
-        // try {
-        // var recipe = index.Recipe.findByPk(req.params.id, {attributes: ['RecipeID', 'Name', 'Image', 'Source', 'Url', 'Yield', 'Calories']});
-        // // var ingredients = index.RecipeIngredient.findAll({ where: { RecipeID: req.params.id }});
-        // // var instructions = index.RecipeInstruction.findAll({ where: { RecipeID: req.params.id }});
-        // // var completeRecipe = JSON.stringify(recipe, ingredients, instructions);
-
-        // // console.log(recipe);
-        // // console.log(ingredients);
-        // // console.log(instructions);
-
-        // res.status(200).send({
-        //     recipe
-        //     // RecipeID: recipe.RecipeID,
-        //     // RecipeName: recipe.Name,
-        //     // Description: recipe.Description,
-        //     // Instructions: recipe.Instructions,
-        //     // Ingredients: ingredients
-        // });
-        // } catch (e) {
-        //     res.status(500).send({
-        //                     message: 'Recipe information could not be loaded',
-        //                     error: e.message
-        //                  });
-        // }
      }
 });
 
@@ -224,184 +158,369 @@ router.get(('/:id'), (req, res) => {
 }
  */
 router.post(('/create'), (req, res) => {
+    // Declare variables START
+    var errorMessages = [];
+
+    var name;
+    var image;
+    var source;
+    var url;
+    var yield;
+    var calories;
+    //var description;
+
+    var ingredients = [];
+    var instructions = [];
+    // Declare variables END 
+
+    // Validation START
+    // TODO: Investigate if throwing all those error messages is standard practice.
+    // Check if name is the right length
     if(!req.body.name) {
-        return res.status(422).send({
-            message: 'Recipe name is required.'
-         });
-    } 
-    else {
-        // Declare variables START
-        var validationErrors = false;
-
-        var name = req.body.name;
-        var image;
-        var source;
-        var url;
-        var yield;
-        var calories;
-        //var description;
-
-        var ingredients = [];
-        var instructions = [];
-        // Declare variables END 
-
-        // Validation START
-        // TODO: Compile validation error messages into an array and send them all back when validation errors happen.
-        // TODO: Also investigate if throwing all those error messages is standard practice.
-        // Check if name is the right length
+        errorMessages.push('Recipe name is required');
+    } else {
+        name = req.body.name;
         if(name.length > 100) {
-            validationErrors = true;
-            errorMessage = 'Recipe name cannot be more than 100 characters long';
+            //validationErrors = true;
+            errorMessages.push('Recipe name cannot be more than 100 characters long');
         }
-        // Check if image is in request
-        if(!req.body.image) {
-            image = null;
-        }
-        else {
-            image = req.body.image;
+    }
+    
+    // Check if image is in request
+    if(!req.body.image) {
+        image = null;
+    }
+    else {
+        image = req.body.image;
         // Ensure length is not too long for Db
-            if(image.length > 2000) {
-                validationErrors = true;
-                errorMessage = 'Image URL cannot be more than 2000 characters long';
-            }
+        if(image.length > 2000) {
+            errorMessages.push('Image URL cannot be more than 2000 characters long');
         }
-        
-        if(!validationErrors) {
-            // Check if source is in request
-            if(!req.body.source) {
-                source = null;
-            }
-            else {
-                source = req.body.source;
-            // Ensure length is not too long for Db
-                if(source.length > 2000) {
-                    validationErrors = true;
-                    errorMessage = 'Source URL cannot be more than 2000 characters long';
-                }
-            }
+    }
+    
+    // Check if source is in request
+    if(!req.body.source) {
+        source = null;
+    }
+    else {
+        source = req.body.source;
+    // Ensure length is not too long for Db
+        if(source.length > 2000) {
+            errorMessages.push('Source URL cannot be more than 2000 characters long');
         }
+    }
 
-        if(!validationErrors) {
-            // Check if Url is in request
-            if(!req.body.url) {
-                url = null;
-            }
-            else {
-                url = req.body.url;
-            // Ensure length is not too long for Db
-                if(url.length > 2000) {
-                    validationErrors = true;
-                    errorMessage = 'URL cannot be more than 2000 characters long';
-                }
-            }
+    // Check if Url is in request
+    if(!req.body.url) {
+        url = null;
+    }
+    else {
+        url = req.body.url;
+    // Ensure length is not too long for Db
+        if(url.length > 2000) {
+            errorMessages.push('URL cannot be more than 2000 characters long');
         }
+    }
 
-        if(!validationErrors) {
-            // Check if yield is in request
-            if(!req.body.yield) {
-                yield = null;
-            }
-            else {
-                yield = req.body.yield;
-            // Check if a number
-                if(isNaN(yield)) {
-                    validationErrors = true;
-                    errorMessage = 'Yield must be a number';
-                }
-            }
+    // Check if yield is in request
+    if(!req.body.yield) {
+        yield = null;
+    }
+    else {
+        yield = req.body.yield;
+    // Check if a number
+        if(isNaN(yield)) {
+            errorMessages.push('Yield must be a number');
         }
+    }
 
-        if(!validationErrors) {
-            // Check if calories is in request
-            if(!req.body.calories) {
-                calories = null;
-            }
-            else {
-                calories = req.body.calories;
-            // Check if a number
-                if(isNaN(calories)) {
-                    validationErrors = true;
-                    errorMessage = 'Calories must be a number';
-                }
-            }
+    // Check if calories is in request
+    if(!req.body.calories) {
+        calories = null;
+    }
+    else {
+        calories = req.body.calories;
+    // Check if a number
+        if(isNaN(calories)) {
+            errorMessages.push('Calories must be a number');
         }
+    }
 
-        if(!validationErrors) {
-            // Check if ingredients are in request
-            if(!req.body.ingredients) {
-                validationErrors = true;
-                errorMessage = 'A recipe needs at least 1 ingredient.';
-            }
-            else {
-                // TODO: figure out how to validate that the right properties are included
-                ingredients = req.body.ingredients;
-            }
-        }
+    // Check if ingredients are in request
+    if(!req.body.ingredients) {
 
-        if(!validationErrors) {
-            // Check if instructions are in request
-            if(!req.body.instructions) {
-                validationErrors = true;
-                errorMessage = 'A recipe needs at least 1 instruction.';
-            }
-            else {
-                // TODO: figure out how to validate that the right properties are included
-                instructions = req.body.instructions;
-                // console.log(instructions);
-                // console.log(ingredients);
-            }
-        }
-        // Validation END
+        errorMessages.push('Each recipe needs at least 1 ingredient.');
+    }
+    else {
+        // TODO: figure out how to validate that the right properties are included
+        ingredients = req.body.ingredients;
+    }
 
-        // Creation START
-        if(!validationErrors) {
-            sequelize.transaction().then(function (t) {
-                return index.Recipe.create({
-                            Name: name,
-                            Image: image,
-                            Source: source,
-                            Url: url,
-                            Yield: yield,
-                            Calories: calories
-                        }, //{freezeTableName: true},
-                            {transaction: t})
-                    .then(function(newRecipe) {
-                        var recId = newRecipe.null;
-                        return Promise.map(ingredients, function(ingredient) {
-                            return index.RecipeIngredient.create({
-                                        RecipeID: recId,
-                                        IngredientID: ingredient.ingredientId,
-                                        MeasureID: ingredient.measureId,
-                                        Amount: ingredient.amount
-                                    }, {transaction: t})
-                        })
-                        .then(function() {
-                            return Promise.map(instructions, function(instruction) {
-                                return index.RecipeInstruction.create({
-                                            RecipeID: recId,
-                                            Step: instruction.step,
-                                            Instruction: instruction.instruction
-                                        }, {transaction: t})
-                            })
-                        })
+    // Check if instructions are in request
+    if(!req.body.instructions) {
+        errorMessages.push('A recipe needs at least 1 instruction.');
+    }
+    else {
+        // TODO: figure out how to validate that the right properties are included
+        instructions = req.body.instructions;
+    }
+    // Validation END
+
+    // Creation START
+    if(errorMessages.length === 0) {
+        sequelize.transaction().then(function (t) {
+            return index.Recipe.create({
+                        Name: name,
+                        Image: image,
+                        Source: source,
+                        Url: url,
+                        Yield: yield,
+                        Calories: calories
+                    }, {transaction: t})
+                .then(function(newRecipe) {
+                    var recId = newRecipe.null;
+                    return Promise.map(ingredients, function(ingredient) {
+                        return index.RecipeIngredient.create({
+                                    RecipeID: recId,
+                                    IngredientID: ingredient.ingredientId,
+                                    MeasureID: ingredient.measureId,
+                                    Amount: ingredient.amount
+                                }, {transaction: t})
                     })
                     .then(function() {
-                        //console.log('FOR TESTING >> committed');
-                        t.commit();
-                        res.status(201).send({
-                            message: 'A recipe record for ' + name +' has been created.'
+                        return Promise.map(instructions, function(instruction) {
+                            return index.RecipeInstruction.create({
+                                        RecipeID: recId,
+                                        Step: instruction.step,
+                                        Instruction: instruction.instruction
+                                    }, {transaction: t})
                         })
                     })
-                    .catch(function (err) {
-                            t.rollback();
-                            res.status(422).send({
-                                message: 'Transaction failed, this is a custom message'
-                            })
+                })
+                .then(function() {
+                    t.commit();
+                    res.status(201).send({
+                        message: 'A recipe record for ' + name +' has been created.'
                     })
-            })
-        }
-        // Creation END 
+                })
+                .catch(function (err) {
+                        t.rollback();
+                        res.status(422).send({
+                            message: 'Transaction failed, this is a custom message'
+                        })
+                })
+        })
+    } else {
+        res.status(422).send({
+            message: errorMessages
+        });
     }
+        // Creation END
+})
+
+/**
+ * This function updates an existing recipe record in the database using its primary key.
+ * 
+ */
+// TODO: Fix this update code to actually work
+router.put(('/update/:id'), (req, res) => {
+    // Declare variables START
+    var errorMessages = [];
+
+    var name;
+    var image;
+    var source;
+    var url;
+    var yield;
+    var calories;
+    //var description;
+
+    var ingredients = [];
+    var instructions = [];
+    // Declare variables END 
+
+    // Validation START
+    // TODO: Investigate if throwing all those error messages is standard practice.
+    // Check to make sure there is something in the body
+    if(!req.body) {
+        res.status(422).send({
+            message: 'You must send something to update this record'
+        })
+    }
+    // Check if name is the right length
+    if(!req.body.name) {
+        errorMessages.push('Recipe name is required');
+    } else {
+        name = req.body.name;
+        if(name.length > 100) {
+            //validationErrors = true;
+            errorMessages.push('Recipe name cannot be more than 100 characters long');
+        }
+    }
+    
+    // Check if image is in request
+    if(!req.body.image) {
+        image = null;
+    }
+    else {
+        image = req.body.image;
+        // Ensure length is not too long for Db
+        if(image.length > 2000) {
+            errorMessages.push('Image URL cannot be more than 2000 characters long');
+        }
+    }
+    
+    // Check if source is in request
+    if(!req.body.source) {
+        source = null;
+    }
+    else {
+        source = req.body.source;
+    // Ensure length is not too long for Db
+        if(source.length > 2000) {
+            errorMessages.push('Source URL cannot be more than 2000 characters long');
+        }
+    }
+
+    // Check if Url is in request
+    if(!req.body.url) {
+        url = null;
+    }
+    else {
+        url = req.body.url;
+    // Ensure length is not too long for Db
+        if(url.length > 2000) {
+            errorMessages.push('URL cannot be more than 2000 characters long');
+        }
+    }
+
+    // Check if yield is in request
+    if(!req.body.yield) {
+        yield = null;
+    }
+    else {
+        yield = req.body.yield;
+    // Check if a number
+        if(isNaN(yield)) {
+            errorMessages.push('Yield must be a number');
+        }
+    }
+
+    // Check if calories is in request
+    if(!req.body.calories) {
+        calories = null;
+    }
+    else {
+        calories = req.body.calories;
+    // Check if a number
+        if(isNaN(calories)) {
+            errorMessages.push('Calories must be a number');
+        }
+    }
+
+    // Check if ingredients are in request
+    if(!req.body.ingredients) {
+
+        errorMessages.push('Each recipe needs at least 1 ingredient.');
+    }
+    else {
+        // TODO: figure out how to validate that the right properties are included
+        ingredients = req.body.ingredients;
+    }
+
+    // Check if instructions are in request
+    if(!req.body.instructions) {
+        errorMessages.push('A recipe needs at least 1 instruction.');
+    }
+    else {
+        // TODO: figure out how to validate that the right properties are included
+        instructions = req.body.instructions;
+    }
+    // Validation END
+
+    // Update START
+    if(errorMessages.length === 0) {
+        sequelize.transaction().then(function (t) {
+            return index.Recipe.update({
+                        Name: name,
+                        Image: image,
+                        Source: source,
+                        Url: url,
+                        Yield: yield,
+                        Calories: calories
+                    },  {where: {RecipeID: req.params.id}},
+                        {transaction: t})
+                .then(function(newRecipe) {
+                    var recId = newRecipe.null;
+                    return Promise.map(ingredients, function(ingredient) {
+                        return index.RecipeIngredient.update({
+                                    RecipeID: recId,
+                                    IngredientID: ingredient.ingredientId,
+                                    MeasureID: ingredient.measureId,
+                                    Amount: ingredient.amount
+                                },  {where: {RecipeID: req.params.id}},
+                                    {transaction: t})
+                    })
+                    .then(function() {
+                        return Promise.map(instructions, function(instruction) {
+                            return index.RecipeInstruction.update({
+                                        RecipeID: recId,
+                                        Step: instruction.step,
+                                        Instruction: instruction.instruction
+                                    },  {where: {RecipeID: req.params.id}},
+                                        {transaction: t})
+                        })
+                    })
+                })
+                .then(function() {
+                    t.commit();
+                    res.status(201).send({
+                        message: 'The recipe record for ' + name +' has been updated.'
+                    })
+                })
+                .catch(function (err) {
+                        t.rollback();
+                        res.status(422).send({
+                            message: 'Transaction failed, this is a custom message'
+                        })
+                })
+        })
+    } else {
+        res.status(422).send({
+            message: errorMessages
+        });
+    }
+        // Update END
+})
+
+/**
+ * This function deletes an existing recipe record in the database using its primary key.
+ * 
+ */
+// TODO: Fix this delete code to actually work
+router.delete(('/delete/:id'), (req, res) => {
+    let id = req.params.id;
+    sequelize.transaction().then(function (t) {
+        index.RecipeIngredient.destroy({where: {RecipeID: id}}, {transaction: t})
+        .then(delIng => {
+            index.RecipeInstruction.destroy({where: {RecipeID: id}}, {transaction: t})
+        })
+        .then(delInst => {
+            index.Recipe.destroy({where: {RecipeID: id}}, {transaction: t})
+        })
+        .then(delRec => {
+            t.commit();
+            res.status(200).send({
+                message: 'Recipe has been deleted'
+            })
+        })
+        .catch(function(e) {
+            t.rollback();
+            res.status(500).send({
+                message: e.message
+            })
+        })
+    })
 })
 
 /**
