@@ -24,10 +24,10 @@ const Recipe = db.define('recipe', {
     },
     Calories: {
         type: Sequelize.FLOAT
-    },
-    Description: {
-        type: Sequelize.STRING
-    }
+    }//,
+    // Description: {
+    //     type: Sequelize.STRING
+    // }
 }, { freezeTableName: true, timestamps: false })
 
 module.exports = Recipe;
